@@ -37,4 +37,29 @@ if __name__ == "__main__":
     print("Seed:", seed)
     print("Sequence reproducible: OK")
     print("Saved plot to chaotic/logistic_sequence_plot.png")
-    
+
+def generate_permutation(seed: float, length: int, r: float = 3.99) -> np.ndarray:
+    """
+    Uses the chaotic sequence to generate a permutation (shuffled order)
+    of indices 0..length-1. This same seed always produces the same
+    permutation, which is what makes decryption possible.
+    """
+    seq = logistic_sequence(seed, length, r)
+    # argsort gives the indices that would sort the sequence — 
+    # since the sequence is chaotic, this ordering looks random
+    permutation = np.argsort(seq)
+    return permutation
+
+def permute_pixels(pixel_bytes: bytes, seed: float) -> bytes:
+    arr = np.frombuffer(pixel_bytes, dtype=np.uint8)
+    perm = generate_permutation(seed, len(arr))
+    scrambled = arr[perm]
+    return scrambled.tobytes()
+
+def unpermute_pixels(scrambled_bytes: bytes, seed: float) -> bytes:
+    arr = np.frombuffer(scrambled_bytes, dtype=np.uint8)
+    perm = generate_permutation(seed, len(arr))
+    # to reverse: place each scrambled value back at its original index
+    original = np.empty_like(arr)
+    original[perm] = arr
+    return original.tobytes()    
