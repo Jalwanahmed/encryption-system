@@ -1,0 +1,6 @@
+venv/
+__pycache__/
+*.pyc
+.DS_Store
+test_data/*.tiff
+test_data/*.tif
