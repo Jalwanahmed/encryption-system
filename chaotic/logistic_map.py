@@ -62,4 +62,29 @@ def unpermute_pixels(scrambled_bytes: bytes, seed: float) -> bytes:
     # to reverse: place each scrambled value back at its original index
     original = np.empty_like(arr)
     original[perm] = arr
+    return original.tobytes()
+
+def diffuse_pixels(pixel_bytes: bytes, seed: float, r: float = 3.99) -> bytes:
+    arr = np.frombuffer(pixel_bytes, dtype=np.uint8).copy()
+    seq = logistic_sequence(seed, len(arr), r)
+    # Convert chaotic sequence to byte-range keystream
+    keystream = (seq * 256).astype(np.uint8)
+
+    diffused = np.empty_like(arr)
+    prev = 0
+    for i in range(len(arr)):
+        diffused[i] = arr[i] ^ keystream[i] ^ prev
+        prev = diffused[i]  # chain: each output depends on the previous output
+    return diffused.tobytes()
+
+def undiffuse_pixels(diffused_bytes: bytes, seed: float, r: float = 3.99) -> bytes:
+    arr = np.frombuffer(diffused_bytes, dtype=np.uint8)
+    seq = logistic_sequence(seed, len(arr), r)
+    keystream = (seq * 256).astype(np.uint8)
+
+    original = np.empty_like(arr)
+    prev = 0
+    for i in range(len(arr)):
+        original[i] = arr[i] ^ keystream[i] ^ prev
+        prev = arr[i]  # chain uses the diffused value, not the recovered original
     return original.tobytes()    
